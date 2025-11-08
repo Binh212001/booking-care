@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DepartmentRepository } from '../../database/repositories/department.repository';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { DepartmentReqDto } from './dto/department.dto';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Department } from 'src/database/entities';
 
 @Injectable()
 export class DepartmentsService {
@@ -11,16 +15,55 @@ export class DepartmentsService {
     return await this.departmentRepository.save(createDepartmentDto);
   }
 
-  async findAll() {
-    return await this.departmentRepository.find({
-      relations: ['doctors', 'rooms'],
+  async findAll(
+    departmentReqDto: DepartmentReqDto,
+  ): Promise<OffsetPaginatedDto<Department>> {
+    const { name, description, typeMatch, q, order } = departmentReqDto;
+
+    const query = this.departmentRepository
+      .createQueryBuilder('department')
+      .leftJoinAndSelect('department.doctors', 'doctors');
+
+    if (q) {
+      query.andWhere(
+        '(department.name LIKE :q OR department.description LIKE :q)',
+        { q: `%${q}%` },
+      );
+    } else {
+      if (name) {
+        if (typeMatch === 'LIKE') {
+          query.andWhere('department.name LIKE :name', { name: `%${name}%` });
+        } else {
+          query.andWhere('department.name = :name', { name });
+        }
+      }
+      if (description) {
+        if (typeMatch === 'LIKE') {
+          query.andWhere('department.description LIKE :description', {
+            description: `%${description}%`,
+          });
+        } else {
+          query.andWhere('department.description = :description', {
+            description,
+          });
+        }
+      }
+    }
+
+    query.orderBy('department.createdAt', order || 'ASC');
+
+    const [data, metaDto] = await paginate(query, departmentReqDto, {
+      skipCount: false,
+      takeAll: departmentReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<Department>(data, metaDto);
   }
 
   async findOne(id: string) {
     const department = await this.departmentRepository.findOne({
       where: { id },
-      relations: ['doctors', 'rooms'],
+      relations: ['doctors'],
     });
 
     if (!department) {

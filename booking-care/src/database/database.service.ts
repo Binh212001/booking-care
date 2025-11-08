@@ -20,6 +20,9 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       dropSchema: false,
       keepConnectionAlive: true,
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+      migrationsRun: false, // Set to true if you want migrations to run automatically on startup
+      migrationsTableName: 'migrations',
     } as TypeOrmModuleOptions;
   }
 }

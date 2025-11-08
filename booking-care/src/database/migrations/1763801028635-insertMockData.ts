@@ -1,123 +1,61 @@
-import { DataSource } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
-import {
-  User,
-  Department,
-  Doctor,
-  Patient,
-  Medicine,
-  Service,
-  Appointment,
-  Prescription,
-  PrescriptionMedicine,
-  MedicalRecord,
-  Treatment,
-} from '../entities';
 
-async function seed() {
-  const configService = new ConfigService();
-
-  const dbHost = configService.get<string>('DB_HOST') || 'localhost';
-  const dbPort = configService.get<number>('DB_PORT') || 25432;
-  const dbUser = configService.get<string>('DB_USER') || 'root';
-  const dbPass = configService.get<string>('DB_PASS') || 'root';
-  const dbName = configService.get<string>('DB_NAME') || 'booking-care';
-
-  const dataSource = new DataSource({
-    type: 'postgres',
-    host: dbHost,
-    port: dbPort,
-    username: dbUser,
-    password: dbPass,
-    database: dbName,
-    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: false,
-  });
-
-  let isInitialized = false;
-  try {
-    await dataSource.initialize();
-    isInitialized = true;
-    console.log('✅ Database connected');
-
-    const userRepository = dataSource.getRepository(User);
-    const departmentRepository = dataSource.getRepository(Department);
-    const doctorRepository = dataSource.getRepository(Doctor);
-    const patientRepository = dataSource.getRepository(Patient);
-    const medicineRepository = dataSource.getRepository(Medicine);
-    const serviceRepository = dataSource.getRepository(Service);
-    const appointmentRepository = dataSource.getRepository(Appointment);
-    const prescriptionRepository = dataSource.getRepository(Prescription);
-    const prescriptionMedicineRepository =
-      dataSource.getRepository(PrescriptionMedicine);
-    const medicalRecordRepository = dataSource.getRepository(MedicalRecord);
-    const treatmentRepository = dataSource.getRepository(Treatment);
-
-    // Clear existing data (optional - comment out if you want to keep existing data)
-    // Use raw SQL with CASCADE to handle foreign key constraints
-    console.log('🗑️  Clearing existing data...');
-    const queryRunner = dataSource.createQueryRunner();
-    await queryRunner.query(
-      'TRUNCATE TABLE prescription_medicines, treatments, medical_records, prescriptions, appointments, rooms, services, medicines, doctors, patients, departments, users CASCADE',
-    );
-    await queryRunner.release();
-
-    // 1. Seed Users
-    console.log('👤 Seeding users...');
+export class InsertMockData1763801028635 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // 1. Insert Users
     const hashedPassword = await bcrypt.hash('password123', 10);
 
-    const adminUser = userRepository.create({
-      username: 'admin',
-      email: 'admin@bookingcare.com',
-      password: hashedPassword,
-      role: 'admin',
-      isActive: true,
-    });
+    const users = [
+      {
+        username: 'admin',
+        email: 'admin@bookingcare.com',
+        password: hashedPassword,
+        role: 'admin',
+        isActive: true,
+      },
+      {
+        username: 'doctor1',
+        email: 'doctor1@bookingcare.com',
+        password: hashedPassword,
+        role: 'doctor',
+        isActive: true,
+      },
+      {
+        username: 'doctor2',
+        email: 'doctor2@bookingcare.com',
+        password: hashedPassword,
+        role: 'doctor',
+        isActive: true,
+      },
+      {
+        username: 'patient1',
+        email: 'patient1@bookingcare.com',
+        password: hashedPassword,
+        role: 'patient',
+        isActive: true,
+      },
+      {
+        username: 'patient2',
+        email: 'patient2@bookingcare.com',
+        password: hashedPassword,
+        role: 'patient',
+        isActive: true,
+      },
+    ];
 
-    const doctorUser1 = userRepository.create({
-      username: 'doctor1',
-      email: 'doctor1@bookingcare.com',
-      password: hashedPassword,
-      role: 'doctor',
-      isActive: true,
-    });
+    const insertedUsers = await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('users')
+      .values(users)
+      .returning(['id', 'username', 'role'])
+      .execute();
 
-    const doctorUser2 = userRepository.create({
-      username: 'doctor2',
-      email: 'doctor2@bookingcare.com',
-      password: hashedPassword,
-      role: 'doctor',
-      isActive: true,
-    });
+    // Get inserted user ids
+    const insertedUsersMap = insertedUsers.generatedMaps;
 
-    const patientUser1 = userRepository.create({
-      username: 'patient1',
-      email: 'patient1@bookingcare.com',
-      password: hashedPassword,
-      role: 'patient',
-      isActive: true,
-    });
-
-    const patientUser2 = userRepository.create({
-      username: 'patient2',
-      email: 'patient2@bookingcare.com',
-      password: hashedPassword,
-      role: 'patient',
-      isActive: true,
-    });
-
-    const savedUsers = await userRepository.save([
-      adminUser,
-      doctorUser1,
-      doctorUser2,
-      patientUser1,
-      patientUser2,
-    ]);
-    console.log(`✅ Created ${savedUsers.length} users`);
-
-    // 2. Seed Departments
-    console.log('🏥 Seeding departments...');
+    // 2. Insert Departments
     const departments = [
       {
         name: 'Khoa Mắt',
@@ -139,13 +77,20 @@ async function seed() {
       },
     ];
 
-    const savedDepartments = await departmentRepository.save(departments);
-    console.log(`✅ Created ${savedDepartments.length} departments`);
+    const insertedDepartments = await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('departments')
+      .values(departments)
+      .returning(['id', 'code'])
+      .execute();
 
-    // 3. Seed Doctors
-    console.log('👨‍⚕️ Seeding doctors...');
+    const insertedDepartmentsMap = insertedDepartments.generatedMaps;
+
+    // 3. Insert Doctors
     const doctors = [
       {
+        code: 'DOC001',
         fullName: 'Bác sĩ Nguyễn Văn A',
         phone: '0912345678',
         email: 'doctor1@bookingcare.com',
@@ -154,13 +99,20 @@ async function seed() {
         degree: 'Tiến sĩ',
         experience: '15 năm kinh nghiệm trong lĩnh vực nhãn khoa',
         gender: 'male',
-        dateOfBirth: new Date('1980-05-15'),
+        dateOfBirth: '1980-05-15',
         address: '123 Đường ABC, Quận 1, TP.HCM',
         isActive: true,
-        departmentId: savedDepartments[0].id,
-        userId: savedUsers[1].id, // doctorUser1
+        departmentId:
+          insertedDepartmentsMap[0] && insertedDepartmentsMap[0].id
+            ? insertedDepartmentsMap[0].id
+            : null, // fix null-safe checks for id
+        userId:
+          insertedUsersMap[1] && insertedUsersMap[1].id
+            ? insertedUsersMap[1].id
+            : null,
       },
       {
+        code: 'DOC002',
         fullName: 'Bác sĩ Trần Thị B',
         phone: '0912345679',
         email: 'doctor2@bookingcare.com',
@@ -169,26 +121,36 @@ async function seed() {
         degree: 'Thạc sĩ',
         experience: '10 năm kinh nghiệm phẫu thuật mắt',
         gender: 'female',
-        dateOfBirth: new Date('1985-08-20'),
+        dateOfBirth: '1985-08-20',
         address: '456 Đường XYZ, Quận 2, TP.HCM',
         isActive: true,
-        departmentId: savedDepartments[2].id,
-        userId: savedUsers[2].id, // doctorUser2
+        departmentId:
+          insertedDepartmentsMap[2] && insertedDepartmentsMap[2].id
+            ? insertedDepartmentsMap[2].id
+            : null,
+        userId:
+          insertedUsersMap[2] && insertedUsersMap[2].id
+            ? insertedUsersMap[2].id
+            : null,
       },
     ];
 
-    const savedDoctors = await doctorRepository.save(doctors);
-    console.log(`✅ Created ${savedDoctors.length} doctors`);
+    const insertedDoctors = await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('doctors')
+      .values(doctors)
+      .returning(['id', 'userId'])
+      .execute();
 
-    // 4. Seed Patients
-    console.log('👤 Seeding patients...');
+    // 4. Insert Patients
     const patients = [
       {
         fullName: 'Nguyễn Văn Bệnh Nhân 1',
         phone: '0987654321',
         email: 'patient1@bookingcare.com',
         gender: 'male',
-        dateOfBirth: new Date('1990-01-10'),
+        dateOfBirth: '1990-01-10',
         identityCard: '123456789012',
         address: '789 Đường DEF, Quận 3, TP.HCM',
         bloodType: 'A+',
@@ -201,14 +163,17 @@ async function seed() {
         leftEyePower: '-2.0D',
         emergencyContact: 'Nguyễn Văn Người Thân',
         emergencyPhone: '0987654322',
-        userId: savedUsers[3].id, // patientUser1
+        userId:
+          insertedUsersMap[3] && insertedUsersMap[3].id
+            ? insertedUsersMap[3].id
+            : null,
       },
       {
         fullName: 'Trần Thị Bệnh Nhân 2',
         phone: '0987654323',
         email: 'patient2@bookingcare.com',
         gender: 'female',
-        dateOfBirth: new Date('1995-03-25'),
+        dateOfBirth: '1995-03-25',
         identityCard: '987654321098',
         address: '321 Đường GHI, Quận 4, TP.HCM',
         bloodType: 'O+',
@@ -221,15 +186,21 @@ async function seed() {
         leftEyePower: '+1.75D',
         emergencyContact: 'Trần Văn Người Thân',
         emergencyPhone: '0987654324',
-        userId: savedUsers[4].id, // patientUser2
+        userId:
+          insertedUsersMap[4] && insertedUsersMap[4].id
+            ? insertedUsersMap[4].id
+            : null,
       },
     ];
 
-    const savedPatients = await patientRepository.save(patients);
-    console.log(`✅ Created ${savedPatients.length} patients`);
+    await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('patients')
+      .values(patients)
+      .execute();
 
-    // 5. Seed Medicines
-    console.log('💊 Seeding medicines...');
+    // 5. Insert Medicines
     const medicines = [
       {
         name: 'Thuốc nhỏ mắt Tobramycin',
@@ -305,11 +276,14 @@ async function seed() {
       },
     ];
 
-    const savedMedicines = await medicineRepository.save(medicines);
-    console.log(`✅ Created ${savedMedicines.length} medicines`);
+    await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('medicines')
+      .values(medicines)
+      .execute();
 
-    // 6. Seed Services
-    console.log('🏥 Seeding services...');
+    // 6. Insert Services
     const services = [
       {
         name: 'Khám tổng quát mắt',
@@ -391,78 +365,27 @@ async function seed() {
       },
     ];
 
-    const savedServices = await serviceRepository.save(services);
-    console.log(`✅ Created ${savedServices.length} services`);
+    await queryRunner.manager
+      .createQueryBuilder()
+      .insert()
+      .into('services')
+      .values(services)
+      .execute();
+  }
 
-    // 7. Seed Rooms
-    console.log('🚪 Seeding rooms...');
-    const rooms = [
-      {
-        name: 'Phòng khám 101',
-        code: 'RM101',
-        floor: 'Tầng 1',
-        location: 'Khu A, Tầng 1',
-        type: 'examination',
-        capacity: 1,
-        equipment: 'Khe đèn, máy đo thị lực, máy đo nhãn áp',
-        isActive: true,
-        departmentId: savedDepartments[0].id,
-      },
-      {
-        name: 'Phòng khám 102',
-        code: 'RM102',
-        floor: 'Tầng 1',
-        location: 'Khu A, Tầng 1',
-        type: 'examination',
-        capacity: 1,
-        equipment: 'Khe đèn, máy đo thị lực, máy đo nhãn áp',
-        isActive: true,
-        departmentId: savedDepartments[0].id,
-      },
-      {
-        name: 'Phòng phẫu thuật 201',
-        code: 'RM201',
-        floor: 'Tầng 2',
-        location: 'Khu B, Tầng 2',
-        type: 'surgery',
-        capacity: 1,
-        equipment: 'Máy phẫu thuật laser, kính hiển vi phẫu thuật',
-        isActive: true,
-        departmentId: savedDepartments[2].id,
-      },
-      {
-        name: 'Phòng tư vấn 103',
-        code: 'RM103',
-        floor: 'Tầng 1',
-        location: 'Khu A, Tầng 1',
-        type: 'consultation',
-        capacity: 2,
-        equipment: 'Bàn, ghế, máy tính',
-        isActive: true,
-        departmentId: savedDepartments[1].id,
-      },
-    ];
-
-    console.log('\n🎉 Database seeding completed successfully!');
-    console.log('\n📊 Summary:');
-    console.log(`   - Users: ${savedUsers.length}`);
-    console.log(`   - Departments: ${savedDepartments.length}`);
-    console.log(`   - Doctors: ${savedDoctors.length}`);
-    console.log(`   - Patients: ${savedPatients.length}`);
-    console.log(`   - Medicines: ${savedMedicines.length}`);
-    console.log(`   - Services: ${savedServices.length}`);
-    console.log('\n🔑 Default password for all users: password123');
-
-    if (isInitialized) {
-      await dataSource.destroy();
-    }
-  } catch (error) {
-    console.error('❌ Error seeding database:', error);
-    if (isInitialized && dataSource.isInitialized) {
-      await dataSource.destroy();
-    }
-    process.exit(1);
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Fix order to comply with foreign key constraints: delete dependent tables first
+    // Delete services
+    await queryRunner.query(`DELETE FROM services`);
+    // Delete medicines
+    await queryRunner.query(`DELETE FROM medicines`);
+    // Delete patients
+    await queryRunner.query(`DELETE FROM patients`);
+    // Delete doctors
+    await queryRunner.query(`DELETE FROM doctors`);
+    // Delete departments
+    await queryRunner.query(`DELETE FROM departments`);
+    // Delete users
+    await queryRunner.query(`DELETE FROM users`);
   }
 }
-
-seed();

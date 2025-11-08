@@ -1,17 +1,21 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Doctor } from 'src/database/entities';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
+import { DoctorReqDto } from './dto/doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 
 @ApiTags('Doctors')
@@ -31,8 +35,10 @@ export class DoctorsController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả bác sĩ' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách bác sĩ thành công' })
-  findAll() {
-    return this.doctorsService.findAll();
+  findAll(
+    @Query() doctorReqDto: DoctorReqDto,
+  ): Promise<OffsetPaginatedDto<Doctor>> {
+    return this.doctorsService.findAll(doctorReqDto);
   }
 
   @Get(':id')

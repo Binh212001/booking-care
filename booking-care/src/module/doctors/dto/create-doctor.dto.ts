@@ -99,9 +99,6 @@ export class CreateDoctorDto {
 
   @ApiProperty({ description: 'ID khoa', example: 'uuid-here' })
   @IsUUID()
+  @IsOptional()
   departmentId?: string;
-
-  @ApiProperty({ description: 'ID người dùng', example: 'uuid-here' })
-  @IsUUID()
-  userId: string;
 }

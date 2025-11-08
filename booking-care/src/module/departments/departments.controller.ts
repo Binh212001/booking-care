@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { DepartmentReqDto } from './dto/department.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Department } from 'src/database/entities';
 
 @ApiTags('Departments')
 @Controller('departments')
@@ -31,8 +35,10 @@ export class DepartmentsController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả khoa' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách khoa thành công' })
-  findAll() {
-    return this.departmentsService.findAll();
+  findAll(
+    @Query() departmentReqDto: DepartmentReqDto,
+  ): Promise<OffsetPaginatedDto<Department>> {
+    return this.departmentsService.findAll(departmentReqDto);
   }
 
   @Get(':id')

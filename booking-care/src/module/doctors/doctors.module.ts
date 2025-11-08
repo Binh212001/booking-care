@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DoctorsService } from './doctors.service';
-import { DoctorsController } from './doctors.controller';
-import { DoctorRepository } from '../../database/repositories/doctor.repository';
-import { Doctor } from '../../database/entities/doctor.entity';
-import { UserRepository } from 'src/database/repositories/user.repository';
-import { DepartmentRepository } from 'src/database/repositories/department.repository';
 import { AppointmentRepository } from 'src/database/repositories/appointment.repository';
+import { DepartmentRepository } from 'src/database/repositories/department.repository';
+import { UserRepository } from 'src/database/repositories/user.repository';
+import { Doctor } from '../../database/entities/doctor.entity';
+import { DoctorRepository } from '../../database/repositories/doctor.repository';
+import { AwsModule } from '../s3/aws.module';
+import { DoctorsController } from './doctors.controller';
+import { DoctorsService } from './doctors.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Doctor])],
+  imports: [TypeOrmModule.forFeature([Doctor]), AwsModule],
   controllers: [DoctorsController],
   providers: [
     DoctorsService,

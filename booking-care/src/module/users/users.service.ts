@@ -1,8 +1,17 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { UserRepository } from '../../database/repositories/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Like } from 'typeorm';
+import { UserReqDto } from './dto/user.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { User } from 'src/database/entities';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
 
 @Injectable()
 export class UsersService {
@@ -36,16 +45,37 @@ export class UsersService {
       ...createUserDto,
       password: hashedPassword,
       role: createUserDto.role || 'patient',
-      isActive: createUserDto.isActive !== undefined ? createUserDto.isActive : true,
+      isActive:
+        createUserDto.isActive !== undefined ? createUserDto.isActive : true,
     };
 
     return await this.userRepository.save(userData);
   }
 
-  async findAll() {
-    return await this.userRepository.find({
-      relations: ['doctor', 'patient'],
+  async findAll(userReqDto: UserReqDto): Promise<OffsetPaginatedDto<User>> {
+    const { username, email, role } = userReqDto;
+
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.doctor', 'doctor')
+      .leftJoinAndSelect('user.patient', 'patient');
+    if (username) {
+      query.andWhere('user.username LIKE :username', {
+        username: `%${username}%`,
+      });
+    }
+    if (email) {
+      query.andWhere('user.email LIKE :email', { email: `%${email}%` });
+    }
+    if (role) {
+      query.andWhere('user.role = :role', { role });
+    }
+    const [data, metaDto] = await paginate(query, userReqDto, {
+      skipCount: false,
+      takeAll: userReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<User>(data, metaDto);
   }
 
   async findOne(id: string) {
@@ -116,4 +146,3 @@ export class UsersService {
     return await this.userRepository.softDelete(id);
   }
 }
-

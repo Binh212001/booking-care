@@ -25,7 +25,11 @@ export class Prescription extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   notes: string; // Ghi chú
 
-  @Column({ type: 'enum', enum: ['pending', 'filled', 'cancelled'], default: 'pending' })
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'filled', 'cancelled'],
+    default: 'pending',
+  })
   status: string; // Trạng thái (chờ, đã kê, hủy)
 
   @Column({ type: 'timestamp', nullable: true })
@@ -43,7 +47,10 @@ export class Prescription extends AbstractEntity {
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 
-  @OneToMany(() => PrescriptionMedicine, (prescriptionMedicine) => prescriptionMedicine.prescription, { cascade: true })
+  @OneToMany(
+    () => PrescriptionMedicine,
+    (prescriptionMedicine) => prescriptionMedicine.prescription,
+    { cascade: true },
+  )
   prescriptionMedicines: PrescriptionMedicine[];
 }
-

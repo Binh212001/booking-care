@@ -9,6 +9,11 @@ import { Between, Not } from 'typeorm';
 import { AppointmentRepository } from '../../database/repositories/appointment.repository';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
+import { AppointmentReqDto } from './dto/appointment.dto';
+import { Appointment } from 'src/database/entities';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { OffsetPaginationDto } from 'src/common/offset-pagination/offset-pagination.dto';
 
 @Injectable()
 export class AppointmentsService {
@@ -64,10 +69,51 @@ export class AppointmentsService {
     return await this.appointmentRepository.save(appointment);
   }
 
-  async findAll() {
-    return await this.appointmentRepository.find({
-      relations: ['patient', 'doctor', 'room', 'service'],
+  async findAll(
+    appointmentReqDto: AppointmentReqDto,
+  ): Promise<OffsetPaginatedDto<Appointment>> {
+    const {
+      patientId,
+      doctorId,
+      serviceId,
+      appointmentDate,
+      startTime,
+      endTime,
+    } = appointmentReqDto as any;
+
+    const query = this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.patient', 'patient')
+      .leftJoinAndSelect('appointment.doctor', 'doctor')
+      .leftJoinAndSelect('appointment.service', 'service');
+
+    if (patientId) {
+      query.andWhere('appointment.patientId = :patientId', { patientId });
+    }
+    if (doctorId) {
+      query.andWhere('appointment.doctorId = :doctorId', { doctorId });
+    }
+    if (serviceId) {
+      query.andWhere('appointment.serviceId = :serviceId', { serviceId });
+    }
+    if (appointmentDate) {
+      query.andWhere('appointment.appointmentDate = :appointmentDate', {
+        appointmentDate,
+      });
+    }
+    if (startTime) {
+      query.andWhere('appointment.startTime = :startTime', { startTime });
+    }
+    if (endTime) {
+      query.andWhere('appointment.endTime = :endTime', { endTime });
+    }
+
+    const [base, metaDto] = await paginate(query, appointmentReqDto, {
+      skipCount: false,
+      takeAll: appointmentReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<Appointment>(base, metaDto);
   }
 
   async findOne(id: string) {

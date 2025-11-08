@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrescriptionMedicinesService } from './prescription-medicines.service';
 import { CreatePrescriptionMedicineDto } from './dto/create-prescription-medicine.dto';
 import { UpdatePrescriptionMedicineDto } from './dto/update-prescription-medicine.dto';
+import { PrescriptionMedicineReqDto } from './dto/prescription-medicine.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { PrescriptionMedicine } from 'src/database/entities';
 
 @ApiTags('Prescription Medicines')
 @Controller('prescription-medicines')
@@ -31,8 +35,10 @@ export class PrescriptionMedicinesController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả thuốc trong đơn thuốc' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thuốc trong đơn thuốc thành công' })
-  findAll() {
-    return this.prescriptionMedicinesService.findAll();
+  findAll(
+    @Query() prescriptionMedicineReqDto: PrescriptionMedicineReqDto,
+  ): Promise<OffsetPaginatedDto<PrescriptionMedicine>> {
+    return this.prescriptionMedicinesService.findAll(prescriptionMedicineReqDto);
   }
 
   @Get(':id')

@@ -5,6 +5,10 @@ import { UpdateMedicalRecordDto } from './dto/update-medical-record.dto';
 import { AppointmentRepository } from 'src/database/repositories/appointment.repository';
 import { DoctorRepository } from 'src/database/repositories/doctor.repository';
 import { PatientRepository } from 'src/database/repositories/patient.repository';
+import { MedicalRecordReqDto } from './dto/medical-record.dto';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { MedicalRecord } from 'src/database/entities';
 
 @Injectable()
 export class MedicalRecordsService {
@@ -47,10 +51,38 @@ export class MedicalRecordsService {
     return await this.medicalRecordRepository.save(medicalRecord);
   }
 
-  async findAll() {
-    return await this.medicalRecordRepository.find({
-      relations: ['patient', 'doctor', 'appointment', 'treatments'],
+  async findAll(
+    medicalRecordReqDto: MedicalRecordReqDto,
+  ): Promise<OffsetPaginatedDto<MedicalRecord>> {
+    const { patientId, doctorId, appointmentId, order } = medicalRecordReqDto;
+
+    const query = this.medicalRecordRepository
+      .createQueryBuilder('medicalRecord')
+      .leftJoinAndSelect('medicalRecord.patient', 'patient')
+      .leftJoinAndSelect('medicalRecord.doctor', 'doctor')
+      .leftJoinAndSelect('medicalRecord.appointment', 'appointment')
+      .leftJoinAndSelect('medicalRecord.treatments', 'treatments');
+
+    if (patientId) {
+      query.andWhere('medicalRecord.patientId = :patientId', { patientId });
+    }
+    if (doctorId) {
+      query.andWhere('medicalRecord.doctorId = :doctorId', { doctorId });
+    }
+    if (appointmentId) {
+      query.andWhere('medicalRecord.appointmentId = :appointmentId', {
+        appointmentId,
+      });
+    }
+
+    query.orderBy('medicalRecord.createdAt', order || 'ASC');
+
+    const [data, metaDto] = await paginate(query, medicalRecordReqDto, {
+      skipCount: false,
+      takeAll: medicalRecordReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<MedicalRecord>(data, metaDto);
   }
 
   async findOne(id: string) {

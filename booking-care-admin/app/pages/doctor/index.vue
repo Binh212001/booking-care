@@ -1,162 +1,116 @@
 <template>
   <div class="doctor-page">
     <div class="page-header">
-      <div>
+      <div class="flex justify-between items-center">
         <h2 class="page-title">Doctor Management</h2>
-        <p class="page-description">Manage doctor profiles</p>
+        <RouterLink to="/doctor/create" class="btn btn-primary">
+          <Button label="New Doctor" icon="pi pi-plus" />
+        </RouterLink>
       </div>
-      <Button label="New Doctor" icon="pi pi-plus" @click="openDialog" />
     </div>
+
+    <DataTable :value="records" tableStyle="min-width: 50rem">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xl font-bold">Doctors</span>
+          <InputText
+            v-model="search"
+            placeholder="Search"
+            @input="handleSearch"
+          />
+        </div>
+      </template>
+      <Column field="fullName" header="Full Name"></Column>
+      <Column header="Image">
+        <template #body="slotProps">
+          <img
+            :src="`${S3_URL}/${slotProps.data.avatar}`"
+            :alt="slotProps.data.avatar"
+            class="w-24 rounded"
+          />
+        </template>
+      </Column>
+      <Column field="phone" header="Phone">
+        <template #body="slotProps">
+          {{ slotProps.data.phone }}
+        </template>
+      </Column>
+      <Column field="email" header="Email">
+        <template #body="slotProps">
+          {{ slotProps.data.email }}
+        </template>
+      </Column>
+      <Column field="licenseNumber" header="License Number"></Column>
+      <Column field="specialization" header="Specialization"></Column>
+      <Column field="degree" header="Degree"></Column>
+      <Column field="experience" header="Experience"></Column>
+      <Column field="gender" header="Gender"></Column>
+      <Column field="dateOfBirth" header="Date of Birth"></Column>
+      <Column field="address" header="Address"></Column>
+      <Column header="Actions">
+        <template #body="slotProps">
+          <div class="flex gap-2">
+            <Button icon="pi pi-pencil" />
+            <Button
+              icon="pi pi-trash"
+              @click="confirmDelete(slotProps.data.id)"
+            />
+          </div>
+        </template>
+      </Column>
+    </DataTable>
   </div>
+  <Dialog
+    v-model:visible="deleteDialogVisible"
+    header="Delete Doctor"
+    :modal="true"
+  >
+    <p>Are you sure you want to delete this doctor?</p>
+    <template #footer>
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        @click="deleteDialogVisible = false"
+      />
+      <Button label="Delete" icon="pi pi-trash" @click="deleteDoctor" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-const doctors = ref([]);
-const loading = ref(false);
-const dialogVisible = ref(false);
+import { onMounted, computed, ref } from "vue";
+import { useDoctorStore } from "~/stores/doctor.service";
+
+const config = useRuntimeConfig();
+const S3_URL = config.public.s3Url;
 const deleteDialogVisible = ref(false);
-const isEditMode = ref(false);
-const selectedDoctor = ref(null);
+const selectedDoctorId = ref("");
+// Define a type for the doctor records for proper typing
 
-const doctorForm = ref({
-  name: "",
-  email: "",
-  phone: "",
-  specialization: "",
-  department: "",
-  status: "Active",
-});
-
-const departmentOptions = [
-  { label: "Cardiology", value: "Cardiology" },
-  { label: "Neurology", value: "Neurology" },
-  { label: "Orthopedics", value: "Orthopedics" },
-  { label: "Pediatrics", value: "Pediatrics" },
-  { label: "General", value: "General" },
-];
-
-const statusOptions = [
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
-];
-
-const dialogTitle = computed(() =>
-  isEditMode.value ? "Edit Doctor" : "New Doctor"
-);
-
-const openDialog = () => {
-  isEditMode.value = false;
-  doctorForm.value = {
-    name: "",
-    email: "",
-    phone: "",
-    specialization: "",
-    department: "",
-    status: "Active",
-  };
-  dialogVisible.value = true;
-};
-
-const closeDialog = () => {
-  dialogVisible.value = false;
-  doctorForm.value = {
-    name: "",
-    email: "",
-    phone: "",
-    specialization: "",
-    department: "",
-    status: "Active",
-  };
-};
-
-const editDoctor = (doctor: any) => {
-  isEditMode.value = true;
-  selectedDoctor.value = doctor;
-  doctorForm.value = { ...doctor };
-  dialogVisible.value = true;
-};
-
-const saveDoctor = () => {
-  // TODO: Implement API call
-  console.log("Saving doctor:", doctorForm.value);
-  closeDialog();
-  loadDoctors();
-};
-
-const confirmDelete = (doctor: any) => {
-  selectedDoctor.value = doctor;
-  deleteDialogVisible.value = true;
-};
-
-const deleteDoctor = () => {
-  // TODO: Implement API call
-  console.log("Deleting doctor:", selectedDoctor.value);
-  deleteDialogVisible.value = false;
-  loadDoctors();
-};
-
-const loadDoctors = async () => {
-  loading.value = true;
-  // TODO: Implement API call
-  doctors.value = [];
-  loading.value = false;
-};
-
+const doctorStore = useDoctorStore();
+const search = ref("");
 onMounted(() => {
-  loadDoctors();
+  doctorStore.fetchDoctors();
 });
 
-useHead({
-  title: "Doctors - Booking Care Admin",
-});
-</script>
+const confirmDelete = (id: string) => {
+  deleteDialogVisible.value = true;
+  selectedDoctorId.value = id;
+};
 
-<style scoped>
-.doctor-page {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: #1e293b;
-}
-
-.page-description {
-  color: #64748b;
-  margin: 0;
-}
-
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.field label {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
+const deleteDoctor = async () => {
+  try {
+    await doctorStore.deleteDoctor(selectedDoctorId.value);
+    deleteDialogVisible.value = false;
+    doctorStore.fetchDoctors();
+  } catch (error) {
+    console.error("Error deleting doctor:", error);
   }
-}
-</style>
+};
+// Use computed to unwrap Pinia getters for reactivity/type
+const records = computed(() => doctorStore.getRecords);
+
+const handleSearch = () => {
+  doctorStore.fetchDoctors(1, 10, search.value);
+};
+</script>

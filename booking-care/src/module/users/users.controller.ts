@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserReqDto } from './dto/user.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { User } from 'src/database/entities';
 
 @ApiTags('Users')
 @Controller('users')
@@ -35,8 +39,8 @@ export class UsersController {
     status: 200,
     description: 'Lấy danh sách users thành công',
   })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() userReqDto: UserReqDto): Promise<OffsetPaginatedDto<User>> {
+    return this.usersService.findAll(userReqDto);
   }
 
   @Get(':id')
@@ -68,4 +72,3 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 }
-

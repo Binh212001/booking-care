@@ -1,32 +1,5 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  html,
-  body {
-    @apply font-sans antialiased text-slate-800;
-  }
-
-  a {
-    @apply no-underline;
-  }
-}
-
-/* Custom Scrollbar Styles */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-slate-100;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400;
-}
+@layer tailwind-base, primevue, tailwind-components, tailwind-utilities; */

@@ -18,6 +18,11 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   const config = new DocumentBuilder()
     .setTitle('Booking Care API')
     .setDescription('API Documentation for Booking Care System')

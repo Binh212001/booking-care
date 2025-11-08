@@ -1,152 +1,194 @@
 <template>
   <div class="service-page">
     <div class="page-header">
-      <div>
+      <div class="flex justify-between items-center">
         <h2 class="page-title">Service Management</h2>
-        <p class="page-description">Manage medical services</p>
+        <RouterLink to="/service/create" class="btn btn-primary">
+          <Button label="New Service" icon="pi pi-plus" />
+        </RouterLink>
       </div>
-      <Button label="New Service" icon="pi pi-plus" @click="openDialog" />
     </div>
+
+    <DataTable :value="records" tableStyle="min-width: 50rem">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xl font-bold">Services</span>
+          <InputText
+            v-model="search"
+            placeholder="Search"
+            @input="handleSearch"
+          />
+        </div>
+      </template>
+      <Column field="code" header="Code">
+        <template #body="slotProps">
+          {{ slotProps.data.code || "-" }}
+        </template>
+      </Column>
+      <Column field="name" header="Name"></Column>
+      <Column field="description" header="Description">
+        <template #body="slotProps">
+          <span class="truncate-text">
+            {{ slotProps.data.description || "-" }}
+          </span>
+        </template>
+      </Column>
+      <Column field="price" header="Price">
+        <template #body="slotProps">
+          {{ formatPrice(slotProps.data.price) }}
+        </template>
+      </Column>
+      <Column field="unit" header="Unit">
+        <template #body="slotProps">
+          {{ slotProps.data.unit || "-" }}
+        </template>
+      </Column>
+      <Column field="duration" header="Duration (min)">
+        <template #body="slotProps">
+          {{ slotProps.data.duration || "-" }}
+        </template>
+      </Column>
+      <Column field="type" header="Type">
+        <template #body="slotProps">
+          <Tag
+            :value="formatType(slotProps.data.type)"
+            :severity="getTypeSeverity(slotProps.data.type)"
+          />
+        </template>
+      </Column>
+      <Column field="isActive" header="Status">
+        <template #body="slotProps">
+          <Tag
+            :value="slotProps.data.isActive ? 'Active' : 'Inactive'"
+            :severity="slotProps.data.isActive ? 'success' : 'danger'"
+          />
+        </template>
+      </Column>
+      <Column header="Actions">
+        <template #body="slotProps">
+          <div class="flex gap-2">
+            <Button
+              icon="pi pi-pencil"
+              @click="navigateTo(`/service/edit/${slotProps.data.id}`)"
+            />
+            <Button
+              icon="pi pi-trash"
+              @click="confirmDelete(slotProps.data.id)"
+            />
+          </div>
+        </template>
+      </Column>
+    </DataTable>
   </div>
+  <Dialog
+    v-model:visible="deleteDialogVisible"
+    header="Delete Service"
+    :modal="true"
+  >
+    <p>Are you sure you want to delete this service?</p>
+    <template #footer>
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        @click="deleteDialogVisible = false"
+      />
+      <Button label="Delete" icon="pi pi-trash" @click="deleteService" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-const services = ref([]);
-const loading = ref(false);
-const dialogVisible = ref(false);
-const deleteDialogVisible = ref(false);
-const isEditMode = ref(false);
-const selectedService = ref(null);
-
-const serviceForm = ref({
-  name: "",
-  description: "",
-  price: 0,
-  status: "Active",
-});
-
-const statusOptions = [
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
-];
-
-const dialogTitle = computed(() =>
-  isEditMode.value ? "Edit Service" : "New Service"
-);
-
-const openDialog = () => {
-  isEditMode.value = false;
-  serviceForm.value = {
-    name: "",
-    description: "",
-    price: 0,
-    status: "Active",
-  };
-  dialogVisible.value = true;
-};
-
-const closeDialog = () => {
-  dialogVisible.value = false;
-  serviceForm.value = {
-    name: "",
-    description: "",
-    price: 0,
-    status: "Active",
-  };
-};
-
-const editService = (service: any) => {
-  isEditMode.value = true;
-  selectedService.value = service;
-  serviceForm.value = { ...service };
-  dialogVisible.value = true;
-};
-
-const saveService = () => {
-  // TODO: Implement API call
-  console.log("Saving service:", serviceForm.value);
-  closeDialog();
-  // Refresh list
-  loadServices();
-};
-
-const confirmDelete = (service: any) => {
-  selectedService.value = service;
-  deleteDialogVisible.value = true;
-};
-
-const deleteService = () => {
-  // TODO: Implement API call
-  console.log("Deleting service:", selectedService.value);
-  deleteDialogVisible.value = false;
-  // Refresh list
-  loadServices();
-};
-
-const loadServices = async () => {
-  loading.value = true;
-  // TODO: Implement API call
-  // const response = await $fetch('/api/services');
-  // services.value = response.data;
-  services.value = [];
-  loading.value = false;
-};
-
-onMounted(() => {
-  loadServices();
-});
+import { onMounted, computed, ref } from "vue";
+import { useServiceStore } from "~/stores/service.service";
 
 useHead({
-  title: "Services - Booking Care Admin",
+  title: "Service Management - Booking Care Admin",
 });
+
+const deleteDialogVisible = ref(false);
+const selectedServiceId = ref("");
+
+const serviceStore = useServiceStore();
+const search = ref("");
+onMounted(() => {
+  serviceStore.fetchServices();
+});
+
+const confirmDelete = (id: string) => {
+  deleteDialogVisible.value = true;
+  selectedServiceId.value = id;
+};
+
+const deleteService = async () => {
+  try {
+    await serviceStore.deleteService(selectedServiceId.value);
+    deleteDialogVisible.value = false;
+    serviceStore.fetchServices();
+  } catch (error) {
+    console.error("Error deleting service:", error);
+  }
+};
+
+// Use computed to unwrap Pinia getters for reactivity/type
+const records = computed(() => serviceStore.getRecords);
+
+const handleSearch = () => {
+  serviceStore.fetchServices(1, 10, search.value);
+};
+
+const formatPrice = (price: number | undefined) => {
+  if (!price) return "-";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+};
+
+const formatType = (type: string | undefined) => {
+  if (!type) return "-";
+  const typeMap: Record<string, string> = {
+    examination: "Examination",
+    surgery: "Surgery",
+    test: "Test",
+    consultation: "Consultation",
+    other: "Other",
+  };
+  return typeMap[type] || type;
+};
+
+const getTypeSeverity = (type: string | undefined) => {
+  if (!type) return "secondary";
+  const severityMap: Record<string, string> = {
+    examination: "info",
+    surgery: "warning",
+    test: "success",
+    consultation: "help",
+    other: "secondary",
+  };
+  return severityMap[type] || "secondary";
+};
 </script>
 
 <style scoped>
 .service-page {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  padding: 1.5rem;
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #1e293b;
 }
 
-.page-description {
-  color: #64748b;
-  margin: 0;
-}
-
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.field label {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-  }
+.truncate-text {
+  display: block;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

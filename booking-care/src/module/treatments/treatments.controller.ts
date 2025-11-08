@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TreatmentsService } from './treatments.service';
 import { CreateTreatmentDto } from './dto/create-treatment.dto';
 import { UpdateTreatmentDto } from './dto/update-treatment.dto';
+import { TreatmentReqDto } from './dto/treatment.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Treatment } from 'src/database/entities';
 
 @ApiTags('Treatments')
 @Controller('treatments')
@@ -30,14 +34,22 @@ export class TreatmentsController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả điều trị' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách điều trị thành công' })
-  findAll() {
-    return this.treatmentsService.findAll();
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách điều trị thành công',
+  })
+  findAll(
+    @Query() treatmentReqDto: TreatmentReqDto,
+  ): Promise<OffsetPaginatedDto<Treatment>> {
+    return this.treatmentsService.findAll(treatmentReqDto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin điều trị theo ID' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin điều trị thành công' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin điều trị thành công',
+  })
   @ApiResponse({ status: 404, description: 'Không tìm thấy điều trị' })
   findOne(@Param('id') id: string) {
     return this.treatmentsService.findOne(id);
@@ -47,7 +59,10 @@ export class TreatmentsController {
   @ApiOperation({ summary: 'Cập nhật thông tin điều trị' })
   @ApiResponse({ status: 200, description: 'Cập nhật điều trị thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy điều trị' })
-  update(@Param('id') id: string, @Body() updateTreatmentDto: UpdateTreatmentDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateTreatmentDto: UpdateTreatmentDto,
+  ) {
     return this.treatmentsService.update(id, updateTreatmentDto);
   }
 
@@ -60,4 +75,3 @@ export class TreatmentsController {
     return this.treatmentsService.remove(id);
   }
 }
-

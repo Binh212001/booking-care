@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { ServiceReqDto } from './dto/service.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Service } from 'src/database/entities';
 
 @ApiTags('Services')
 @Controller('services')
@@ -31,8 +35,10 @@ export class ServicesController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả dịch vụ' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
-  findAll() {
-    return this.servicesService.findAll();
+  findAll(
+    @Query() serviceReqDto: ServiceReqDto,
+  ): Promise<OffsetPaginatedDto<Service>> {
+    return this.servicesService.findAll(serviceReqDto);
   }
 
   @Get(':id')

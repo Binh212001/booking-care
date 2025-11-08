@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MedicinesService } from './medicines.service';
 import { CreateMedicineDto } from './dto/create-medicine.dto';
 import { UpdateMedicineDto } from './dto/update-medicine.dto';
+import { MedicineReqDto } from './dto/medicine.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Medicine } from 'src/database/entities';
 
 @ApiTags('Medicines')
 @Controller('medicines')
@@ -31,8 +35,10 @@ export class MedicinesController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả thuốc' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thuốc thành công' })
-  findAll() {
-    return this.medicinesService.findAll();
+  findAll(
+    @Query() medicineReqDto: MedicineReqDto,
+  ): Promise<OffsetPaginatedDto<Medicine>> {
+    return this.medicinesService.findAll(medicineReqDto);
   }
 
   @Get(':id')

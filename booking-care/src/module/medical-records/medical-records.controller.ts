@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MedicalRecordsService } from './medical-records.service';
 import { CreateMedicalRecordDto } from './dto/create-medical-record.dto';
 import { UpdateMedicalRecordDto } from './dto/update-medical-record.dto';
+import { MedicalRecordReqDto } from './dto/medical-record.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { MedicalRecord } from 'src/database/entities';
 
 @ApiTags('Medical Records')
 @Controller('medical-records')
@@ -34,8 +38,10 @@ export class MedicalRecordsController {
     status: 200,
     description: 'Lấy danh sách hồ sơ bệnh án thành công',
   })
-  findAll() {
-    return this.medicalRecordsService.findAll();
+  findAll(
+    @Query() medicalRecordReqDto: MedicalRecordReqDto,
+  ): Promise<OffsetPaginatedDto<MedicalRecord>> {
+    return this.medicalRecordsService.findAll(medicalRecordReqDto);
   }
 
   @Get(':id')

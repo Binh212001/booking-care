@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { OffsetPaginationDto } from 'src/common/offset-pagination/offset-pagination.dto';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
+import { UserRepository } from 'src/database/repositories/user.repository';
+import { DepartmentRepository } from '../../database/repositories/department.repository';
 import { DoctorRepository } from '../../database/repositories/doctor.repository';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
+import { DoctorReqDto } from './dto/doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
-import { DepartmentRepository } from '../../database/repositories/department.repository';
-import { UserRepository } from 'src/database/repositories/user.repository';
-import { AppointmentRepository } from 'src/database/repositories/appointment.repository';
-import dayjs from 'dayjs';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Doctor } from 'src/database/entities';
+import { PresignedUrlDto } from 'src/common/presigned-url.dto';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class DoctorsService {
@@ -13,11 +23,11 @@ export class DoctorsService {
     private readonly doctorRepository: DoctorRepository,
     private readonly departmentRepository: DepartmentRepository,
     private readonly userRepository: UserRepository,
-    private readonly appointmentRepository: AppointmentRepository,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(createDoctorDto: CreateDoctorDto) {
-    const { userId, departmentId, ...doctorData } = createDoctorDto;
+    const { departmentId, ...doctorData } = createDoctorDto;
 
     const doctorCode = await this.generateDoctorCode();
 
@@ -26,38 +36,49 @@ export class DoctorsService {
     });
 
     if (!department) {
-      throw new NotFoundException(
+      throw new BadRequestException(
         `Department with ID ${departmentId} not found`,
       );
-    }
-
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
     const newDoctor = this.doctorRepository.create({
       code: doctorCode,
       ...doctorData,
       department,
-      user,
     });
+    //create user
+    const newUser = this.userRepository.create({
+      username: doctorData.fullName,
+      email: doctorData.email,
+      password: await bcrypt.hash(doctorData.fullName, 10),
+      role: 'doctor',
+    });
+    const savedUser = await this.userRepository.save(newUser);
+    newDoctor.user = savedUser;
 
     return await this.doctorRepository.save(newDoctor);
   }
 
-  async findAll() {
-    return await this.doctorRepository.find({
-      relations: [
-        'department',
-        'user',
-        'appointments',
-        'medicalRecords',
-        'prescriptions',
-      ],
+  async findAll(
+    doctorReqDto: DoctorReqDto,
+  ): Promise<OffsetPaginatedDto<Doctor>> {
+    const { q, order } = doctorReqDto;
+
+    const query = this.doctorRepository.createQueryBuilder('doctor');
+
+    if (q) {
+      query.andWhere(
+        '(doctor.fullName ILIKE :q OR doctor.email ILIKE :q OR doctor.phone ILIKE :q)',
+        { q: `%${q}%` },
+      );
+    }
+
+    const [base, metaDto] = await paginate(query, doctorReqDto, {
+      skipCount: false,
+      takeAll: doctorReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<Doctor>(base, metaDto);
   }
 
   async findOne(id: string) {
@@ -85,16 +106,7 @@ export class DoctorsService {
     if (!doctor) {
       throw new NotFoundException(`Doctor with ID ${id} not found`);
     }
-    const { userId, departmentId, ...doctorData } = updateDoctorDto;
-    if (userId) {
-      const user = await this.userRepository.findOne({
-        where: { id: userId },
-      });
-      if (!user) {
-        throw new NotFoundException(`User with ID ${userId} not found`);
-      }
-      doctor.user = user;
-    }
+    const { departmentId, ...doctorData } = updateDoctorDto;
     if (departmentId) {
       const department = await this.departmentRepository.findOne({
         where: { id: departmentId },

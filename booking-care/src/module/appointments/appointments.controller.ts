@@ -8,11 +8,15 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { AppointmentReqDto } from './dto/appointment.dto';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Appointment } from 'src/database/entities';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -30,14 +34,22 @@ export class AppointmentsController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả lịch hẹn' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách lịch hẹn thành công' })
-  findAll() {
-    return this.appointmentsService.findAll();
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách lịch hẹn thành công',
+  })
+  findAll(
+    @Query() appointmentReqDto: AppointmentReqDto,
+  ): Promise<OffsetPaginatedDto<Appointment>> {
+    return this.appointmentsService.findAll(appointmentReqDto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin lịch hẹn thành công' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin lịch hẹn thành công',
+  })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   findOne(@Param('id') id: string) {
     return this.appointmentsService.findOne(id);
@@ -47,7 +59,10 @@ export class AppointmentsController {
   @ApiOperation({ summary: 'Cập nhật thông tin lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Cập nhật lịch hẹn thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAppointmentDto: UpdateAppointmentDto,
+  ) {
     return this.appointmentsService.update(id, updateAppointmentDto);
   }
 
@@ -60,4 +75,3 @@ export class AppointmentsController {
     return this.appointmentsService.remove(id);
   }
 }
-

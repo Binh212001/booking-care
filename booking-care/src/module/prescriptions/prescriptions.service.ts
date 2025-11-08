@@ -1,13 +1,15 @@
-import { Patient } from './../../database/entities/patient.entity';
-import { Entity } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { OffsetPaginatedDto } from 'src/common/offset-pagination/paginated.dto';
+import { Prescription } from 'src/database/entities';
+import { AppointmentRepository } from 'src/database/repositories/appointment.repository';
+import { DoctorRepository } from 'src/database/repositories/doctor.repository';
+import { PatientRepository } from 'src/database/repositories/patient.repository';
 import { PrescriptionRepository } from '../../database/repositories/prescription.repository';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
+import { PrescriptionReqDto } from './dto/prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
-import { DoctorRepository } from 'src/database/repositories/doctor.repository';
-import { AppointmentRepository } from 'src/database/repositories/appointment.repository';
-import { PatientRepository } from 'src/database/repositories/patient.repository';
-import { Appointment, Doctor, Prescription } from 'src/database/entities';
+import { paginate } from 'src/common/offset-pagination/offset-pagination';
 
 @Injectable()
 export class PrescriptionsService {
@@ -52,16 +54,29 @@ export class PrescriptionsService {
     return await this.prescriptionRepository.save(prescription);
   }
 
-  async findAll() {
-    return await this.prescriptionRepository.find({
-      relations: [
-        'patient',
-        'doctor',
-        'appointment',
+  async findAll(
+    prescriptionReqDto: PrescriptionReqDto,
+  ): Promise<OffsetPaginatedDto<Prescription>> {
+    const { page, limit, order, patientId, doctorId, appointmentId } =
+      prescriptionReqDto;
+
+    const query = this.prescriptionRepository
+      .createQueryBuilder('prescription')
+      .leftJoinAndSelect('prescription.patient', 'patient')
+      .leftJoinAndSelect('prescription.doctor', 'doctor')
+      .leftJoinAndSelect('prescription.appointment', 'appointment')
+      .leftJoinAndSelect(
+        'prescription.prescriptionMedicines',
         'prescriptionMedicines',
-        'prescriptionMedicines.medicine',
-      ],
+      )
+      .leftJoinAndSelect('prescriptionMedicines.medicine', 'medicine');
+
+    const [data, metaDto] = await paginate(query, prescriptionReqDto, {
+      skipCount: false,
+      takeAll: prescriptionReqDto.takeAll,
     });
+
+    return new OffsetPaginatedDto<Prescription>(data, metaDto);
   }
 
   async findOne(id: string) {

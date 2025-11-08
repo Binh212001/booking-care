@@ -1,151 +1,208 @@
 <template>
   <div class="medicine-page">
     <div class="page-header">
-      <div>
+      <div class="flex justify-between items-center">
         <h2 class="page-title">Medicine Management</h2>
-        <p class="page-description">Manage medicine inventory</p>
+        <RouterLink to="/medicine/create" class="btn btn-primary">
+          <Button label="New Medicine" icon="pi pi-plus" />
+        </RouterLink>
       </div>
-      <Button label="New Medicine" icon="pi pi-plus" @click="openDialog" />
     </div>
+
+    <DataTable :value="records" tableStyle="min-width: 50rem">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xl font-bold">Medicines</span>
+          <InputText
+            v-model="search"
+            placeholder="Search"
+            @input="handleSearch"
+          />
+        </div>
+      </template>
+      <Column field="code" header="Code">
+        <template #body="slotProps">
+          {{ slotProps.data.code || "-" }}
+        </template>
+      </Column>
+      <Column field="name" header="Name"></Column>
+      <Column field="activeIngredient" header="Active Ingredient">
+        <template #body="slotProps">
+          {{ slotProps.data.activeIngredient || "-" }}
+        </template>
+      </Column>
+      <Column field="form" header="Form">
+        <template #body="slotProps">
+          <Tag
+            v-if="slotProps.data.form"
+            :value="formatForm(slotProps.data.form)"
+            :severity="getFormSeverity(slotProps.data.form)"
+          />
+          <span v-else>-</span>
+        </template>
+      </Column>
+      <Column field="manufacturer" header="Manufacturer">
+        <template #body="slotProps">
+          {{ slotProps.data.manufacturer || "-" }}
+        </template>
+      </Column>
+      <Column field="price" header="Price">
+        <template #body="slotProps">
+          {{ formatPrice(slotProps.data.price) }}
+        </template>
+      </Column>
+      <Column field="stock" header="Stock">
+        <template #body="slotProps">
+          <Tag
+            :value="slotProps.data.stock ?? 0"
+            :severity="getStockSeverity(slotProps.data.stock)"
+          />
+        </template>
+      </Column>
+      <Column field="isEyeMedication" header="Eye Medication">
+        <template #body="slotProps">
+          <Tag
+            :value="slotProps.data.isEyeMedication ? 'Yes' : 'No'"
+            :severity="slotProps.data.isEyeMedication ? 'info' : 'secondary'"
+          />
+        </template>
+      </Column>
+      <Column field="isActive" header="Status">
+        <template #body="slotProps">
+          <Tag
+            :value="slotProps.data.isActive ? 'Active' : 'Inactive'"
+            :severity="slotProps.data.isActive ? 'success' : 'danger'"
+          />
+        </template>
+      </Column>
+      <Column header="Actions">
+        <template #body="slotProps">
+          <div class="flex gap-2">
+            <RouterLink :to="`/medicine/${slotProps.data.id}`">
+              <Button icon="pi pi-eye" severity="info" />
+            </RouterLink>
+            <RouterLink :to="`/medicine/edit/${slotProps.data.id}`">
+              <Button icon="pi pi-pencil" />
+            </RouterLink>
+            <Button
+              icon="pi pi-trash"
+              @click="confirmDelete(slotProps.data.id)"
+            />
+          </div>
+        </template>
+      </Column>
+    </DataTable>
   </div>
+  <Dialog
+    v-model:visible="deleteDialogVisible"
+    header="Delete Medicine"
+    :modal="true"
+  >
+    <p>Are you sure you want to delete this medicine?</p>
+    <template #footer>
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        @click="deleteDialogVisible = false"
+      />
+      <Button label="Delete" icon="pi pi-trash" @click="deleteMedicine" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-const medicines = ref([]);
-const loading = ref(false);
-const dialogVisible = ref(false);
-const deleteDialogVisible = ref(false);
-const isEditMode = ref(false);
-const selectedMedicine = ref(null);
-
-const medicineForm = ref({
-  name: "",
-  manufacturer: "",
-  quantity: 0,
-  price: 0,
-  expiryDate: null,
-});
-
-const dialogTitle = computed(() =>
-  isEditMode.value ? "Edit Medicine" : "New Medicine"
-);
-
-const formatDate = (date: string | Date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString();
-};
-
-const openDialog = () => {
-  isEditMode.value = false;
-  medicineForm.value = {
-    name: "",
-    manufacturer: "",
-    quantity: 0,
-    price: 0,
-    expiryDate: null,
-  };
-  dialogVisible.value = true;
-};
-
-const closeDialog = () => {
-  dialogVisible.value = false;
-  medicineForm.value = {
-    name: "",
-    manufacturer: "",
-    quantity: 0,
-    price: 0,
-    expiryDate: null,
-  };
-};
-
-const editMedicine = (medicine: any) => {
-  isEditMode.value = true;
-  selectedMedicine.value = medicine;
-  medicineForm.value = { ...medicine };
-  dialogVisible.value = true;
-};
-
-const saveMedicine = () => {
-  // TODO: Implement API call
-  console.log("Saving medicine:", medicineForm.value);
-  closeDialog();
-  loadMedicines();
-};
-
-const confirmDelete = (medicine: any) => {
-  selectedMedicine.value = medicine;
-  deleteDialogVisible.value = true;
-};
-
-const deleteMedicine = () => {
-  // TODO: Implement API call
-  console.log("Deleting medicine:", selectedMedicine.value);
-  deleteDialogVisible.value = false;
-  loadMedicines();
-};
-
-const loadMedicines = async () => {
-  loading.value = true;
-  // TODO: Implement API call
-  medicines.value = [];
-  loading.value = false;
-};
-
-onMounted(() => {
-  loadMedicines();
-});
+import { onMounted, computed, ref } from "vue";
+import { useMedicineStore } from "~/stores/medicine.service";
 
 useHead({
-  title: "Medicines - Booking Care Admin",
+  title: "Medicine Management - Booking Care Admin",
 });
+
+const deleteDialogVisible = ref(false);
+const selectedMedicineId = ref("");
+
+const medicineStore = useMedicineStore();
+const search = ref("");
+onMounted(() => {
+  medicineStore.fetchMedicines();
+});
+
+const confirmDelete = (id: string) => {
+  deleteDialogVisible.value = true;
+  selectedMedicineId.value = id;
+};
+
+const deleteMedicine = async () => {
+  try {
+    await medicineStore.deleteMedicine(selectedMedicineId.value);
+    deleteDialogVisible.value = false;
+    medicineStore.fetchMedicines();
+  } catch (error) {
+    console.error("Error deleting medicine:", error);
+  }
+};
+
+// Use computed to unwrap Pinia getters for reactivity/type
+const records = computed(() => medicineStore.getRecords);
+
+const handleSearch = () => {
+  medicineStore.fetchMedicines(1, 10, search.value);
+};
+
+const formatPrice = (price: number | undefined) => {
+  if (!price) return "-";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+};
+
+const formatForm = (form: string | undefined) => {
+  if (!form) return "-";
+  const formMap: Record<string, string> = {
+    tablet: "Tablet",
+    capsule: "Capsule",
+    eye_drops: "Eye Drops",
+    ointment: "Ointment",
+    injection: "Injection",
+    other: "Other",
+  };
+  return formMap[form] || form;
+};
+
+const getFormSeverity = (form: string | undefined) => {
+  if (!form) return "secondary";
+  const severityMap: Record<string, string> = {
+    tablet: "success",
+    capsule: "info",
+    eye_drops: "warning",
+    ointment: "help",
+    injection: "danger",
+    other: "secondary",
+  };
+  return severityMap[form] || "secondary";
+};
+
+const getStockSeverity = (stock: number | undefined) => {
+  if (stock === undefined || stock === null) return "secondary";
+  if (stock === 0) return "danger";
+  if (stock < 10) return "warning";
+  return "success";
+};
 </script>
 
 <style scoped>
 .medicine-page {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  padding: 1.5rem;
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #1e293b;
-}
-
-.page-description {
-  color: #64748b;
-  margin: 0;
-}
-
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.field label {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-  }
 }
 </style>
