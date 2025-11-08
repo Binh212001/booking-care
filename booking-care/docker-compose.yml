@@ -1,0 +1,48 @@
+services:
+  # 🗄 PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: booking-care
+    ports:
+      - '25432:5432'
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # ⚡ Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./data/redis:/data
+    command: ['redis-server', '--appendonly', 'yes']
+    networks:
+      - backend
+
+      # 🖥 pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '8080:80'
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+networks:
+  backend:
+    driver: bridge
