@@ -29,6 +29,7 @@ export interface DoctorResponse {
   page: number;
   limit: number;
   loading: boolean;
+  currentDoctor: DoctorRecord | null;
 }
 
 export const useDoctorStore = defineStore("doctor", {
@@ -36,9 +37,9 @@ export const useDoctorStore = defineStore("doctor", {
     records: [],
     total: 0,
     page: 1,
-
     limit: 10,
     loading: false,
+    currentDoctor: null,
   }),
   actions: {
     async fetchDoctors(page: number = 1, limit: number = 10, q: string = "") {
@@ -79,6 +80,29 @@ export const useDoctorStore = defineStore("doctor", {
         console.error("Error deleting doctor:", error);
       }
     },
+
+    async fetchDoctorById(id: string) {
+      this.loading = true;
+      try {
+        const response: any = await axiosInstance.get(`/doctors/${id}`);
+        this.currentDoctor = response.data ?? response;
+        return this.currentDoctor;
+      } catch (error) {
+        console.error("Error fetching doctor:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateDoctor(id: string, doctor: Partial<DoctorRecord>) {
+      try {
+        return await axiosInstance.patch(`/doctors/${id}`, doctor);
+      } catch (error) {
+        console.error("Error updating doctor:", error);
+        throw error;
+      }
+    },
   },
   getters: {
     getRecords: (state) => state.records,
@@ -86,5 +110,6 @@ export const useDoctorStore = defineStore("doctor", {
     getPage: (state) => state.page,
     getLimit: (state) => state.limit,
     isLoading: (state) => state.loading,
+    getCurrentDoctor: (state) => state.currentDoctor,
   },
 });

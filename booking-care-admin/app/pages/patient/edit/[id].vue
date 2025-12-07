@@ -1,0 +1,559 @@
+<template>
+  <div>
+    <div class="patient-edit-page">
+      <Toast />
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">Edit Patient</h1>
+      </div>
+
+      <div v-if="loading" class="flex justify-center items-center py-8">
+        <ProgressSpinner />
+      </div>
+
+      <Form
+        v-else
+        v-slot="$form"
+        :initialValues="initialValues"
+        :resolver="resolver"
+        @submit="onFormSubmit"
+        class="w-full"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="fullName">Full Name</label>
+            <InputText
+              id="fullName"
+              name="fullName"
+              type="text"
+              placeholder="Full Name"
+              fluid
+            />
+            <Message
+              v-if="$form.fullName?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.fullName?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="phone">Phone</label>
+            <InputText
+              id="phone"
+              name="phone"
+              type="text"
+              placeholder="Phone"
+              fluid
+            />
+            <Message
+              v-if="$form.phone?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.phone?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="email">Email</label>
+            <InputText
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Email"
+              fluid
+            />
+            <Message
+              v-if="$form.email?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.email?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="gender">Gender</label>
+            <Dropdown
+              id="gender"
+              name="gender"
+              :options="[
+                { label: 'Nam', value: 'male' },
+                { label: 'Nữ', value: 'female' },
+                { label: 'Khác', value: 'other' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Gender"
+              fluid
+              showClear
+            />
+            <Message
+              v-if="$form.gender?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.gender?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="dateOfBirth">Date of Birth</label>
+            <InputText
+              id="dateOfBirth"
+              name="dateOfBirth"
+              type="date"
+              placeholder="Date of Birth"
+              fluid
+            />
+            <Message
+              v-if="$form.dateOfBirth?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.dateOfBirth?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="identityCard">Identity Card (CMND/CCCD)</label>
+            <InputText
+              id="identityCard"
+              name="identityCard"
+              type="text"
+              placeholder="Identity Card"
+              fluid
+            />
+            <Message
+              v-if="$form.identityCard?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.identityCard?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1 md:col-span-2">
+            <label for="address">Address</label>
+            <InputText
+              id="address"
+              name="address"
+              type="text"
+              placeholder="Address"
+              fluid
+            />
+            <Message
+              v-if="$form.address?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.address?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="bloodType">Blood Type</label>
+            <InputText
+              id="bloodType"
+              name="bloodType"
+              type="text"
+              placeholder="Blood Type (e.g., O+)"
+              fluid
+            />
+            <Message
+              v-if="$form.bloodType?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.bloodType?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1 md:col-span-2">
+            <label for="medicalHistory">Medical History</label>
+            <Textarea
+              id="medicalHistory"
+              name="medicalHistory"
+              placeholder="Medical History"
+              :rows="3"
+              fluid
+            />
+            <Message
+              v-if="$form.medicalHistory?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.medicalHistory?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1 md:col-span-2">
+            <label for="allergy">Allergy</label>
+            <Textarea
+              id="allergy"
+              name="allergy"
+              placeholder="Allergy"
+              :rows="3"
+              fluid
+            />
+            <Message
+              v-if="$form.allergy?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.allergy?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1 md:col-span-2">
+            <label for="eyeHistory">Eye History</label>
+            <Textarea
+              id="eyeHistory"
+              name="eyeHistory"
+              placeholder="Eye History"
+              :rows="3"
+              fluid
+            />
+            <Message
+              v-if="$form.eyeHistory?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.eyeHistory?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="wearsGlasses">Wears Glasses</label>
+            <div class="flex items-center gap-2">
+              <InputSwitch id="wearsGlasses" name="wearsGlasses" />
+              <span>{{ $form.wearsGlasses?.value ? "Yes" : "No" }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="wearsContactLens">Wears Contact Lens</label>
+            <div class="flex items-center gap-2">
+              <InputSwitch id="wearsContactLens" name="wearsContactLens" />
+              <span>{{ $form.wearsContactLens?.value ? "Yes" : "No" }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="rightEyePower">Right Eye Power</label>
+            <InputText
+              id="rightEyePower"
+              name="rightEyePower"
+              type="text"
+              placeholder="Right Eye Power (e.g., -2.5D)"
+              fluid
+            />
+            <Message
+              v-if="$form.rightEyePower?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.rightEyePower?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="leftEyePower">Left Eye Power</label>
+            <InputText
+              id="leftEyePower"
+              name="leftEyePower"
+              type="text"
+              placeholder="Left Eye Power (e.g., -2.0D)"
+              fluid
+            />
+            <Message
+              v-if="$form.leftEyePower?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.leftEyePower?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="emergencyContact">Emergency Contact</label>
+            <InputText
+              id="emergencyContact"
+              name="emergencyContact"
+              type="text"
+              placeholder="Emergency Contact Name"
+              fluid
+            />
+            <Message
+              v-if="$form.emergencyContact?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.emergencyContact?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="emergencyPhone">Emergency Phone</label>
+            <InputText
+              id="emergencyPhone"
+              name="emergencyPhone"
+              type="text"
+              placeholder="Emergency Phone"
+              fluid
+            />
+            <Message
+              v-if="$form.emergencyPhone?.invalid"
+              severity="error"
+              size="small"
+              variant="simple"
+              >{{ $form.emergencyPhone?.error?.message }}</Message
+            >
+          </div>
+          <div class="flex flex-col pb-2 gap-1">
+            <label for="avatar">Avatar URL</label>
+            <div>
+              <ClientOnly>
+                <ImageInput
+                  :modelValue="initialValues.avatar"
+                  name="avatar"
+                  @update:modelValue="uploadS3"
+                />
+              </ClientOnly>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end mt-6">
+          <Button
+            type="submit"
+            severity="secondary"
+            label="Update"
+            :loading="submitting"
+          />
+        </div>
+      </Form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import ImageInput from "@/components/image-input.vue";
+import { zodResolver } from "@primevue/forms/resolvers/zod";
+import { ref, onMounted, computed } from "vue";
+import { z } from "zod";
+import { useRoute } from "vue-router";
+import { getUploadUrl, uploadFileToS3 } from "~/stores/s3-upload.servcie";
+import { usePatientStore } from "~/stores/patient.service";
+
+const route = useRoute();
+const id = route.params.id as string;
+const patientStore = usePatientStore();
+const submitting = ref(false);
+const loading = ref(false);
+
+const uploadUrl = ref<string>("");
+const uploadFile = ref<File | null>(null);
+
+const initialValues = ref({
+  fullName: "",
+  phone: "",
+  email: "",
+  gender: "",
+  dateOfBirth: "",
+  identityCard: "",
+  address: "",
+  bloodType: "",
+  medicalHistory: "",
+  allergy: "",
+  eyeHistory: "",
+  wearsGlasses: false,
+  wearsContactLens: false,
+  rightEyePower: "",
+  leftEyePower: "",
+  emergencyContact: "",
+  emergencyPhone: "",
+  avatar: "",
+  userId: "",
+});
+
+const resolver = ref(
+  zodResolver(
+    z.object({
+      fullName: z
+        .string()
+        .min(1, { message: "Họ và tên là bắt buộc." })
+        .max(100, { message: "Họ và tên không được vượt quá 100 ký tự." }),
+      phone: z
+        .string()
+        .min(1, { message: "Số điện thoại là bắt buộc." })
+        .max(20, { message: "Số điện thoại không được vượt quá 20 ký tự." })
+        .regex(/^[0-9]+$/, { message: "Số điện thoại chỉ được chứa chữ số." }),
+      email: z
+        .string()
+        .email({ message: "Email không hợp lệ." })
+        .max(255, { message: "Email không được vượt quá 255 ký tự." })
+        .optional()
+        .or(z.literal("")),
+      gender: z.enum(["male", "female", "other"], {
+        required_error: "Giới tính là bắt buộc.",
+      }),
+      dateOfBirth: z
+        .string()
+        .min(1, { message: "Ngày sinh là bắt buộc." })
+        .regex(/^\d{4}-\d{2}-\d{2}$/, {
+          message: "Ngày sinh phải đúng định dạng yyyy-mm-dd.",
+        }),
+      identityCard: z
+        .string()
+        .max(20, { message: "CMND/CCCD không được vượt quá 20 ký tự." })
+        .optional()
+        .or(z.literal("")),
+      address: z.string().optional().or(z.literal("")),
+      bloodType: z
+        .string()
+        .max(50, { message: "Nhóm máu không được vượt quá 50 ký tự." })
+        .optional()
+        .or(z.literal("")),
+      medicalHistory: z.string().optional().or(z.literal("")),
+      allergy: z.string().optional().or(z.literal("")),
+      eyeHistory: z.string().optional().or(z.literal("")),
+      wearsGlasses: z.boolean().optional().default(false),
+      wearsContactLens: z.boolean().optional().default(false),
+      rightEyePower: z
+        .string()
+        .max(50, { message: "Độ kính mắt phải không được vượt quá 50 ký tự." })
+        .optional()
+        .or(z.literal("")),
+      leftEyePower: z
+        .string()
+        .max(50, { message: "Độ kính mắt trái không được vượt quá 50 ký tự." })
+        .optional()
+        .or(z.literal("")),
+      emergencyContact: z
+        .string()
+        .max(255, {
+          message: "Người liên hệ khẩn cấp không được vượt quá 255 ký tự.",
+        })
+        .optional()
+        .or(z.literal("")),
+      emergencyPhone: z
+        .string()
+        .max(20, {
+          message: "Số điện thoại người liên hệ không được vượt quá 20 ký tự.",
+        })
+        .optional()
+        .or(z.literal("")),
+      userId: z
+        .string()
+        .uuid({ message: "ID người dùng không hợp lệ." })
+        .optional()
+        .or(z.literal("")),
+    })
+  )
+);
+
+onMounted(async () => {
+  try {
+    loading.value = true;
+    const patient = await patientStore.fetchPatientById(id);
+    if (patient) {
+      // Format date for input field (YYYY-MM-DD)
+      const formatDateForInput = (date?: string) => {
+        if (!date) return "";
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
+      initialValues.value = {
+        fullName: patient.fullName || "",
+        phone: patient.phone || "",
+        email: patient.email || "",
+        gender: patient.gender || "",
+        dateOfBirth: formatDateForInput(patient.dateOfBirth),
+        identityCard: patient.identityCard || "",
+        address: patient.address || "",
+        bloodType: patient.bloodType || "",
+        medicalHistory: patient.medicalHistory || "",
+        allergy: patient.allergy || "",
+        eyeHistory: patient.eyeHistory || "",
+        wearsGlasses: patient.wearsGlasses ?? false,
+        wearsContactLens: patient.wearsContactLens ?? false,
+        rightEyePower: patient.rightEyePower || "",
+        leftEyePower: patient.leftEyePower || "",
+        emergencyContact: patient.emergencyContact || "",
+        emergencyPhone: patient.emergencyPhone || "",
+        avatar: patient.avatar || "",
+        userId: patient.userId?.toString() || "",
+      };
+    }
+  } catch (error) {
+    console.error("Error loading patient:", error);
+  } finally {
+    loading.value = false;
+  }
+});
+
+const uploadS3 = async (file: File | null) => {
+  try {
+    if (file) {
+      const url = await getUploadUrl(file);
+      uploadFile.value = file;
+      // axiosInstance interceptor returns response.data, which is a string URL
+      uploadUrl.value = (url as unknown as string) || "";
+    }
+  } catch (error: any) {
+    console.error("🚀 ~ uploadS3 ~ error:", error?.message || error);
+  }
+};
+
+const onFormSubmit = async ({
+  valid,
+  values,
+}: {
+  valid: boolean;
+  values: any;
+}) => {
+  try {
+    if (valid) {
+      submitting.value = true;
+
+      // Upload S3 file if new file is selected
+      let avatarFileName = initialValues.value.avatar;
+      if (uploadFile.value && uploadUrl.value) {
+        const s3Response = await uploadFileToS3(
+          uploadFile.value,
+          uploadUrl.value
+        );
+        avatarFileName = uploadFile.value.name;
+      }
+
+      // Prepare submit data
+      const submitData = {
+        fullName: values.fullName,
+        phone: values.phone,
+        email: values.email?.trim() || undefined,
+        gender: values.gender,
+        dateOfBirth: values.dateOfBirth,
+        identityCard: values.identityCard?.trim() || undefined,
+        address: values.address?.trim() || undefined,
+        bloodType: values.bloodType?.trim() || undefined,
+        medicalHistory: values.medicalHistory?.trim() || undefined,
+        allergy: values.allergy?.trim() || undefined,
+        eyeHistory: values.eyeHistory?.trim() || undefined,
+        wearsGlasses: values.wearsGlasses ?? false,
+        wearsContactLens: values.wearsContactLens ?? false,
+        rightEyePower: values.rightEyePower?.trim() || undefined,
+        leftEyePower: values.leftEyePower?.trim() || undefined,
+        emergencyContact: values.emergencyContact?.trim() || undefined,
+        emergencyPhone: values.emergencyPhone?.trim() || undefined,
+        avatar: avatarFileName || undefined,
+        userId: values.userId?.trim() || undefined,
+      };
+
+      // Call api update patient
+      await patientStore.updatePatient(id, submitData);
+      navigateTo(`/patient/${id}`);
+    }
+  } catch (error: any) {
+    console.error("🚀 ~ onFormSubmit ~ error:", error?.message || error);
+  } finally {
+    submitting.value = false;
+  }
+};
+</script>
+
+<style scoped>
+.patient-edit-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+</style>

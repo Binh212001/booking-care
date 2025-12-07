@@ -289,6 +289,18 @@
             >{{ $form.emergencyPhone?.error?.message }}</Message
           >
         </div>
+        <div class="flex flex-col pb-2 gap-1">
+          <label for="avatar">Avatar URL</label>
+          <div>
+            <ClientOnly>
+              <ImageInput
+                :modelValue="initialValues.avatar"
+                name="avatar"
+                @update:modelValue="uploadS3"
+              />
+            </ClientOnly>
+          </div>
+        </div>
 
       </div>
       <div class="flex justify-end mt-6">
@@ -299,10 +311,15 @@
 </template>
 
 <script setup>
+import ImageInput from "@/components/image-input.vue";
 import { zodResolver } from "@primevue/forms/resolvers/zod";
 import { ref } from "vue";
 import { z } from "zod";
+import { getUploadUrl, uploadFileToS3 } from "~/stores/s3-upload.servcie";
 import axiosInstance from "~/api/axiosInstance";
+
+const uploadUrl = ref("");
+const uploadFile = ref(null);
 
 const initialValues = ref({
   fullName: "",
@@ -322,6 +339,7 @@ const initialValues = ref({
   leftEyePower: "",
   emergencyContact: "",
   emergencyPhone: "",
+  avatar: "",
   userId: "",
 });
 
@@ -401,9 +419,29 @@ const resolver = ref(
   )
 );
 
+const uploadS3 = async (file) => {
+  try {
+    if (file) {
+      const url = await getUploadUrl(file);
+      uploadFile.value = file;
+      uploadUrl.value = url;
+    }
+  } catch (error) {
+    console.error("🚀 ~ uploadS3 ~ error:", error.message);
+  }
+};
+
 const onFormSubmit = async ({ valid, values }) => {
   try {
     if (valid) {
+      // Upload S3 file
+      if (uploadFile.value) {
+        const s3Response = await uploadFileToS3(
+          uploadFile.value,
+          uploadUrl.value
+        );
+      }
+
       // Prepare submit data
       const submitData = {
         fullName: values.fullName,
@@ -423,6 +461,7 @@ const onFormSubmit = async ({ valid, values }) => {
         leftEyePower: values.leftEyePower?.trim() || undefined,
         emergencyContact: values.emergencyContact?.trim() || undefined,
         emergencyPhone: values.emergencyPhone?.trim() || undefined,
+        avatar: uploadFile.value?.name || undefined,
         userId: values.userId?.trim() || undefined,
       };
 

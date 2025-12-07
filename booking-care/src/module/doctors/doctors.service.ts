@@ -86,6 +86,7 @@ export class DoctorsService {
       where: { id },
       relations: [
         'department',
+        'user',
         'appointments',
         'medicalRecords',
         'prescriptions',

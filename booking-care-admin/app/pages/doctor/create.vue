@@ -339,7 +339,7 @@ const onFormSubmit = async ({ valid, values }) => {
         ...values,
         avatar: uploadFile.value.name,
       });
-      navigateTo("/doctors");
+      navigateTo("/doctor");
     }
   } catch (error) {
     console.error("🚀 ~ onFormSubmit ~ error:", error.message);

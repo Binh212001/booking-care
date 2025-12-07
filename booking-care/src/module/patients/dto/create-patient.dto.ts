@@ -55,6 +55,14 @@ export class CreatePatientDto {
   @IsString()
   address?: string;
 
+  @ApiPropertyOptional({
+    description: 'Avatar',
+    example: 'https://example.com/avatar.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
   @ApiPropertyOptional({ description: 'Nhóm máu', example: 'O+' })
   @IsOptional()
   @IsString()

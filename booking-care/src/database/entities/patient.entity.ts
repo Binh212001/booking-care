@@ -16,6 +16,9 @@ export class Patient extends AbstractEntity {
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   email: string; // Email
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar: string; // Avatar
+
   @Column({ type: 'enum', enum: ['male', 'female', 'other'] })
   gender: string; // Giới tính
 

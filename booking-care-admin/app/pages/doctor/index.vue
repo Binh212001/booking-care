@@ -50,9 +50,18 @@
       <Column header="Actions">
         <template #body="slotProps">
           <div class="flex gap-2">
-            <Button icon="pi pi-pencil" />
+            <Button
+              icon="pi pi-eye"
+              severity="info"
+              @click="$router.push(`/doctor/${slotProps.data.id}`)"
+            />
+            <Button
+              icon="pi pi-pencil"
+              @click="$router.push(`/doctor/edit/${slotProps.data.id}`)"
+            />
             <Button
               icon="pi pi-trash"
+              severity="danger"
               @click="confirmDelete(slotProps.data.id)"
             />
           </div>

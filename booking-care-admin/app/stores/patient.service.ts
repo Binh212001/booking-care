@@ -16,6 +16,19 @@ export interface PatientRecord {
   avatar?: string;
   isActive: boolean;
   userId?: number | string;
+  identityCard?: string;
+  bloodType?: string;
+  medicalHistory?: string;
+  allergy?: string;
+  eyeHistory?: string;
+  wearsGlasses?: boolean;
+  wearsContactLens?: boolean;
+  rightEyePower?: string;
+  leftEyePower?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PatientResponse {
@@ -24,6 +37,7 @@ export interface PatientResponse {
   page: number;
   limit: number;
   loading: boolean;
+  currentPatient: PatientRecord | null;
 }
 
 export const usePatientStore = defineStore("patient", {
@@ -33,6 +47,7 @@ export const usePatientStore = defineStore("patient", {
     page: 1,
     limit: 10,
     loading: false,
+    currentPatient: null,
   }),
   actions: {
     async fetchPatients(page: number = 1, limit: number = 10, q: string = "") {
@@ -73,6 +88,29 @@ export const usePatientStore = defineStore("patient", {
         console.error("Error deleting patient:", error);
       }
     },
+
+    async fetchPatientById(id: string) {
+      this.loading = true;
+      try {
+        const response: any = await axiosInstance.get(`/patients/${id}`);
+        this.currentPatient = response.data ?? response;
+        return this.currentPatient;
+      } catch (error) {
+        console.error("Error fetching patient:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updatePatient(id: string, patient: Partial<PatientRecord>) {
+      try {
+        return await axiosInstance.patch(`/patients/${id}`, patient);
+      } catch (error) {
+        console.error("Error updating patient:", error);
+        throw error;
+      }
+    },
   },
   getters: {
     getRecords: (state) => state.records,
@@ -80,5 +118,6 @@ export const usePatientStore = defineStore("patient", {
     getPage: (state) => state.page,
     getLimit: (state) => state.limit,
     isLoading: (state) => state.loading,
+    getCurrentPatient: (state) => state.currentPatient,
   },
 });
